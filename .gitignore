@@ -1,0 +1,14 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+frontend/dist/
+
+# vite cache
+.vite/
+.cache/
+
+# env
+.env
+.env.*
