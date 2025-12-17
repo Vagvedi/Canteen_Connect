@@ -84,3 +84,5 @@ curl -X PATCH http://localhost:4000/api/orders/o1/status \
 - Seed users: `alice@uni.edu` (student), `staff@uni.edu` (staff); password `password`
 - Replace secrets in `.env` before deploying; keep dev secret out of commits.
 
+## CanteenConnect
+A full-stack canteen management system.
