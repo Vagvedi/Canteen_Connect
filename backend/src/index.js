@@ -5,12 +5,11 @@ const path = require('path');
 const { Server } = require('socket.io');
 
 const {
+  waitForDB,
   ensureUsersTable,
   ensureMenuTable,
   ensureOrdersTable,
   ensureBillsTable,
-  seedDefaultUsers,
-  seedDefaultMenu,
 } = require('./db/mysql');
 
 const authRoutes = require('./routes/auth');
@@ -26,31 +25,29 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
 /* =======================
-   MYSQL INIT
+   INIT DATABASE (SAFE)
 ======================= */
 (async () => {
   try {
+    await waitForDB();
     await ensureUsersTable();
     await ensureMenuTable();
     await ensureOrdersTable();
     await ensureBillsTable();
-    await seedDefaultUsers();
-    await seedDefaultMenu();
-    console.log('✅ MySQL tables initialized and seeded');
+    console.log('✅ MySQL tables ready');
   } catch (err) {
-    console.error('❌ Error initializing MySQL:', err);
+    console.error(err.message);
   }
 })();
 
 /* =======================
-   HTTP + SOCKET.IO
+   SERVER + SOCKET
 ======================= */
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
 });
 
-// attach io to req
 app.use((req, _res, next) => {
   req.io = io;
   next();
@@ -65,37 +62,29 @@ app.use('/api/menu', menuRoutes);
 app.use('/api', orderRoutes);
 
 /* =======================
-   SOCKET EVENTS
+   SOCKET
 ======================= */
 io.on('connection', (socket) => {
   const { role, userId } = socket.handshake.query;
-
   if (role === 'staff') socket.join('staff');
   if (userId) socket.join(userId);
 });
 
 /* =======================
-   FRONTEND (SINGLE SERVER)
+   FRONTEND SERVING
 ======================= */
-const publicPath = path.join(__dirname, '../public');
+const frontendPath = path.join(__dirname, '../public');
+app.use(express.static(frontendPath));
 
-// Serve React build
-app.use(express.static(publicPath));
-
-// React Router fallback
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(publicPath, 'index.html'));
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 /* =======================
-   SERVER START
+   START SERVER
 ======================= */
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8080;
 
-if (require.main === module) {
-  server.listen(PORT, () => {
-    console.log(`🚀 App running on port ${PORT}`);
-  });
-}
-
-module.exports = { app, server };
+server.listen(PORT, () => {
+  console.log(`🚀 App running on port ${PORT}`);
+});
