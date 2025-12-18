@@ -77,14 +77,14 @@ io.on('connection', (socket) => {
 /* =======================
    FRONTEND (SINGLE SERVER)
 ======================= */
-const frontendPath = path.join(__dirname, '../../frontend/dist');
+const publicPath = path.join(__dirname, '../public');
 
-// Serve React/Vite build
-app.use(express.static(frontendPath));
+// Serve React build
+app.use(express.static(publicPath));
 
-// Fallback for React Router
+// React Router fallback
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 /* =======================
