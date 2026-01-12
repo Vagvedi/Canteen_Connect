@@ -1,16 +1,10 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
-
-const {
-  waitForDB,
-  ensureUsersTable,
-  ensureMenuTable,
-  ensureOrdersTable,
-  ensureBillsTable,
-} = require('./db/mysql');
 
 const authRoutes = require('./routes/auth');
 const menuRoutes = require('./routes/menu');
@@ -24,21 +18,7 @@ const app = express();
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
-/* =======================
-   INIT DATABASE (SAFE)
-======================= */
-(async () => {
-  try {
-    await waitForDB();
-    await ensureUsersTable();
-    await ensureMenuTable();
-    await ensureOrdersTable();
-    await ensureBillsTable();
-    console.log('✅ MySQL tables ready');
-  } catch (err) {
-    console.error(err.message);
-  }
-})();
+/* ❌ MySQL init REMOVED */
 
 /* =======================
    SERVER + SOCKET
@@ -56,7 +36,10 @@ app.use((req, _res, next) => {
 /* =======================
    API ROUTES
 ======================= */
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api', orderRoutes);
@@ -66,6 +49,7 @@ app.use('/api', orderRoutes);
 ======================= */
 io.on('connection', (socket) => {
   const { role, userId } = socket.handshake.query;
+
   if (role === 'staff') socket.join('staff');
   if (userId) socket.join(userId);
 });
@@ -83,8 +67,8 @@ app.get('*', (_req, res) => {
 /* =======================
    START SERVER
 ======================= */
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 4000;
 
 server.listen(PORT, () => {
-  console.log(`🚀 App running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
