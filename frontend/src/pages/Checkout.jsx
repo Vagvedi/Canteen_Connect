@@ -7,7 +7,7 @@ import Bill from '../components/Bill';
 
 const Checkout = () => {
   const { items, clear } = useCartStore();
-  const { user, token } = useAuthStore();
+  const { user, session } = useAuthStore();
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ const Checkout = () => {
   }, [user, navigate]);
 
   const handleCheckout = async () => {
-    if (!user || !token) {
+    if (!user || !session) {
       setMessage('Please login to checkout.');
       navigate('/login');
       return;

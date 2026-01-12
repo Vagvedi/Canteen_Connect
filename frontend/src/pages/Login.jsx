@@ -1,141 +1,69 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { login as apiLogin } from '../api/client';
-import { useAuthStore } from '../state/store';
+import { useState } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../state/store";
+import AuthLayout from "../components/AuthLayout";
 
-const Login = () => {
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-  const { login } = useAuthStore();
+export default function Login() {
+  const initialize = useAuthStore((s) => s.initialize);
 
-  const submit = async (e) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
-    try {
-      const { user, token } = await apiLogin(form);
-      login(user, token);
-      
-      // Redirect based on role
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/menu');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-    }
-  };
+    setLoading(true);
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.1
-      }
-    }
-  };
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.4 }
+    if (!error) {
+      await initialize();
     }
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-12">
-      <motion.div 
-        className="max-w-md w-full"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div 
-          className="glass p-8 rounded-2xl shadow-2xl relative overflow-hidden"
-          variants={itemVariants}
+    <AuthLayout
+      title="Welcome Back"
+      subtitle="One login for students, staff & admins. Fast. Simple. Secure."
+    >
+      <form className="space-y-5">
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full py-3 rounded-lg bg-purple-600 hover:bg-purple-700 transition font-bold text-white"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-300/20 to-accent-300/20 rounded-full blur-3xl -z-0" />
-          <div className="relative z-10">
-            <motion.h1 
-              className="text-4xl font-bold mb-2 gradient-text"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
-            >
-              Welcome Back
-            </motion.h1>
-            <p className="text-gray-600 mb-6">Sign in to continue to Canteen Connect</p>
-            
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: error ? 1 : 0, height: error ? 'auto' : 0 }}
-              className="mb-4 overflow-hidden"
-            >
-              {error && (
-                <motion.div 
-                  className="p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 font-medium"
-                  initial={{ x: -20 }}
-                  animate={{ x: 0 }}
-                >
-                  {error}
-                </motion.div>
-              )}
-            </motion.div>
+          {loading ? "Logging in..." : "LOGIN"}
+        </button>
 
-            <form className="space-y-4" onSubmit={submit}>
-              <motion.div variants={itemVariants}>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                />
-              </motion.div>
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full btn-primary py-3 text-lg font-bold"
-              >
-                Login
-              </motion.button>
-            </form>
+        <p className="text-sm text-white/70 text-center">
+          Don&apos;t have an account?{" "}
+          <a href="/register" className="text-purple-400 font-semibold">
+            Register
+          </a>
+        </p>
 
-            <motion.p 
-              className="text-sm text-gray-600 mt-6 text-center"
-              variants={itemVariants}
-            >
-              No account?{' '}
-              <Link 
-                to="/register" 
-                className="text-primary-600 font-semibold hover:text-primary-700 transition-colors"
-              >
-                Register here
-              </Link>
-            </motion.p>
-          </div>
-        </motion.div>
-      </motion.div>
-    </div>
+      </form>
+    </AuthLayout>
   );
-};
-
-export default Login;
-
+}

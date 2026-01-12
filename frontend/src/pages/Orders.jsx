@@ -327,7 +327,7 @@ const Orders = () => {
                 <ClickableOrderCard 
                   order={order} 
                   onStatusChange={user.role === 'admin' ? handleStatus : null}
-                  canEdit={user.role === 'admin'}
+                  canEdit={user.role === 'admin' || user.role === 'staff'}
                 />
               </motion.div>
             ))}

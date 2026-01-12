@@ -1,51 +1,80 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import NavBar from './components/NavBar';
-import Home from './pages/Home';
-import Menu from './pages/Menu';
-import ItemDetail from './pages/ItemDetail';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Orders from './pages/Orders';
-import AdminDashboard from './pages/AdminDashboard';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import { useAuthStore } from './state/store';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 
-const App = () => {
-  const { user } = useAuthStore();
-  
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Menu from "./pages/Menu";
+import Orders from "./pages/Orders";
+import Checkout from "./pages/Checkout";
+import ItemDetail from "./pages/ItemDetail";
+
+import { useAuthStore } from "./state/store";
+
+export default function App() {
+  const { user, profile, initialize, initialized } = useAuthStore();
+
+  useEffect(() => {
+    initialize();
+  }, []);
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50">
-      <NavBar />
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route 
-          path="/menu" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <Menu />} 
-        />
-        <Route 
-          path="/menu/:id" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <ItemDetail />} 
-        />
-        <Route 
-          path="/cart" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <Cart />} 
-        />
-        <Route 
-          path="/checkout" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <Checkout />} 
-        />
-        <Route path="/orders" element={<Orders />} />
-        <Route
-          path="/admin"
-          element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />}
-        />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+
+        {/* ---------------- PUBLIC ROUTES ---------------- */}
+        {!user && (
+          <>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </>
+        )}
+
+        {/* ---------------- LOGGED IN BUT PROFILE LOADING ---------------- */}
+        {user && !profile && (
+          <Route
+            path="*"
+            element={
+              <div className="min-h-screen flex items-center justify-center text-white">
+                Loading profile...
+              </div>
+            }
+          />
+        )}
+
+        {/* ---------------- ADMIN ROUTES ---------------- */}
+        {user && profile?.role === "admin" && (
+          <>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </>
+        )}
+
+        {/* ---------------- STUDENT / STAFF ROUTES ---------------- */}
+        {user &&
+          (profile?.role === "student" || profile?.role === "staff") && (
+            <>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/menu" element={<Menu />} />
+              <Route path="/menu/:id" element={<ItemDetail />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </>
+          )}
       </Routes>
-    </div>
+    </BrowserRouter>
   );
-};
-
-export default App;
-
+}

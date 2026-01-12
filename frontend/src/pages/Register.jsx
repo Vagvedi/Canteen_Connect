@@ -1,192 +1,124 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { register as apiRegister } from '../api/client';
-import { useAuthStore } from '../state/store';
+import { useState } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../state/store";
+import AuthLayout from "../components/AuthLayout";
 
-const Register = () => {
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student', registerNumber: '' });
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-  const { login } = useAuthStore();
+export default function Register() {
+  const initialize = useAuthStore((s) => s.initialize);
 
-  const submit = async (e) => {
+  const [role, setRole] = useState("student");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [roll, setRoll] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
-    
-    // Validate registration number for students
-    if (form.role === 'student' && !form.registerNumber.trim()) {
-      setError('Registration number is required for students');
+    setLoading(true);
+    setError(null);
+
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
       return;
     }
-    
-    try {
-      const payload = { ...form };
-      // Only send registerNumber if it's a student
-      if (form.role !== 'student') {
-        delete payload.registerNumber;
-      }
-      const { user, token } = await apiRegister(payload);
-      login(user, token);
-      
-      // Redirect based on role
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else if (user.role === 'staff') {
-        navigate('/orders');
-      } else {
-        navigate('/menu');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
-    }
-  };
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.1
-      }
-    }
-  };
+    await supabase.from("users").insert({
+      id: data.user.id,
+      name,
+      email,
+      role,
+      roll_number: role === "student" ? roll : null,
+    });
 
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.4 }
-    }
+    await initialize();
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-12">
-      <motion.div 
-        className="max-w-md w-full"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div 
-          className="glass p-8 rounded-2xl shadow-2xl relative overflow-hidden"
-          variants={itemVariants}
+    <AuthLayout
+      title="Create Account"
+      subtitle="One system for students, staff & admins"
+    >
+      <form onSubmit={handleRegister} className="space-y-5">
+
+        {/* ROLE TOGGLE */}
+        <div className="grid grid-cols-3 gap-2">
+          {["student", "staff", "admin"].map((r) => (
+            <button
+              type="button"
+              key={r}
+              onClick={() => setRole(r)}
+              className={`py-2 rounded-lg font-semibold ${
+                role === r
+                  ? "bg-purple-600 text-white"
+                  : "bg-black/30 text-white/70"
+              }`}
+            >
+              {r.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        <input
+          placeholder="Full Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
+        />
+
+        <input
+          placeholder="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
+        />
+
+        <input
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
+        />
+
+        {role === "student" && (
+          <input
+            placeholder="Roll Number"
+            value={roll}
+            onChange={(e) => setRoll(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
+          />
+        )}
+
+        <button
+          disabled={loading}
+          className="w-full py-3 rounded-lg bg-purple-600 hover:bg-purple-700 transition font-bold text-white"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-accent-300/20 to-primary-300/20 rounded-full blur-3xl -z-0" />
-          <div className="relative z-10">
-            <motion.h1 
-              className="text-4xl font-bold mb-2 gradient-text"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
-            >
-              Create Account
-            </motion.h1>
-            <p className="text-gray-600 mb-6">Join Canteen Connect today</p>
-            
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: error ? 1 : 0, height: error ? 'auto' : 0 }}
-              className="mb-4 overflow-hidden"
-            >
-              {error && (
-                <motion.div 
-                  className="p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 font-medium"
-                  initial={{ x: -20 }}
-                  animate={{ x: 0 }}
-                >
-                  {error}
-                </motion.div>
-              )}
-            </motion.div>
+          {loading ? "Creating..." : "CREATE ACCOUNT"}
+        </button>
 
-            <form className="space-y-4" onSubmit={submit}>
-              <motion.div variants={itemVariants}>
-                <input
-                  type="text"
-                  placeholder="Name"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                />
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <select
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200 bg-white"
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value, registerNumber: form.role === 'student' ? form.registerNumber : '' })}
-                >
-                  <option value="student">Student</option>
-                  <option value="staff">Staff</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </motion.div>
-              {form.role === 'student' && (
-                <motion.div 
-                  variants={itemVariants}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Registration Number *"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                    value={form.registerNumber}
-                    onChange={(e) => setForm({ ...form, registerNumber: e.target.value })}
-                    required
-                  />
-                </motion.div>
-              )}
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full btn-secondary py-3 text-lg font-bold"
-              >
-                Create account
-              </motion.button>
-            </form>
+        {error && <p className="text-red-400 text-sm">{error}</p>}
 
-            <motion.p 
-              className="text-sm text-gray-600 mt-6 text-center"
-              variants={itemVariants}
-            >
-              Already registered?{' '}
-              <Link 
-                to="/login" 
-                className="text-primary-600 font-semibold hover:text-primary-700 transition-colors"
-              >
-                Login here
-              </Link>
-            </motion.p>
-          </div>
-        </motion.div>
-      </motion.div>
-    </div>
+        <p className="text-sm text-white/70 text-center">
+          Already have an account?{" "}
+          <a href="/login" className="text-purple-400 font-semibold">
+            Login
+          </a>
+        </p>
+
+      </form>
+    </AuthLayout>
   );
-};
-
-export default Register;
-
+}
