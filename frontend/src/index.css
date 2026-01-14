@@ -1,70 +1,152 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =========================
+   GLOBAL BASE STYLES
+   ========================= */
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  @apply bg-gradient-to-br from-primary-50 via-white to-accent-50;
-  background-attachment: fixed;
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  background: radial-gradient(
+    circle at top left,
+    #2b145e,
+    #14082f 60%
+  );
+  color: #eae6ff;
 }
 
-.card {
-  @apply bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-white/60 transition-all duration-300;
-}
-
-.card:hover {
-  @apply shadow-xl scale-[1.02];
-}
+/* =========================
+   REUSABLE GLASS UTILITY
+   ========================= */
 
 .glass {
-  @apply bg-white/80 backdrop-blur-lg border border-white/60 shadow-xl;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+/* =====================================================
+   🔒 LEGACY AUTH LAYOUT (DO NOT TOUCH)
+   Used by Login.jsx & Register.jsx
+   ===================================================== */
+
+/* PAGE WRAPPER */
+.page {
+  min-height: 100vh;
+  padding: 80px;
+  display: flex;
+  align-items: center;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
+/* SPLIT SCREEN */
+.split {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 80px;
 }
 
-::-webkit-scrollbar-track {
-  @apply bg-primary-50;
+/* LEFT CONTENT (Login + Register SAME) */
+.left h1 {
+  font-size: 56px;
+  font-weight: 800;
+  margin-bottom: 12px;
 }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-primary-400 rounded-full;
+.left span {
+  color: #9b5cff;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary-500;
+.left p {
+  max-width: 420px;
+  opacity: 0.85;
+  line-height: 1.6;
 }
 
-/* Button animations */
-.btn-primary {
-  @apply px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95;
+/* RIGHT CARD */
+.card {
+  width: 380px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.btn-secondary {
-  @apply px-6 py-3 rounded-xl bg-gradient-to-r from-accent-500 to-accent-600 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95;
+/* CARD TITLE */
+.card h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
 }
 
-/* Input animations */
-input, textarea, select {
-  @apply transition-all duration-300 focus:ring-2 focus:ring-primary-400 focus:border-primary-400;
+/* INPUTS */
+.card input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  outline: none;
 }
 
-/* Link animations */
-a {
-  @apply transition-all duration-200;
+.card input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
-/* Gradient text */
-.gradient-text {
-  @apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
+/* BUTTON */
+.card button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #9b5cff;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
 }
 
+.card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* FOOTER TEXT */
+.card p {
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+/* ROLE TABS */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.tabs .active {
+  background: #9b5cff;
+  border-color: transparent;
+}

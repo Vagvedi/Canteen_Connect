@@ -1,141 +1,143 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { login as apiLogin } from '../api/client';
-import { useAuthStore } from '../state/store';
+// src/pages/Login.jsx
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../state/store";
 
-const Login = () => {
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const { initialize } = useAuthStore();
 
-  const submit = async (e) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setLoading(true);
+    setError("");
+
     try {
-      const { user, token } = await apiLogin(form);
-      login(user, token);
-      
-      // Redirect based on role
-      if (user.role === 'admin') {
-        navigate('/admin');
+      const { error: authError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (authError) throw authError;
+
+      // 🔑 VERY IMPORTANT
+      await initialize();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error("Login failed");
+
+      // 🔑 FETCH ROLE
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      // 🔥 ROLE-BASED REDIRECT
+      if (profile?.role === "admin") {
+        navigate("/admin", { replace: true });
       } else {
-        navigate('/menu');
+        navigate("/dashboard", {
+          replace: true,
+        });
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-    }
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.4 }
+      console.error("Login error:", err);
+      setError(
+        err.message ||
+          "Invalid login credentials"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-12">
-      <motion.div 
-        className="max-w-md w-full"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div 
-          className="glass p-8 rounded-2xl shadow-2xl relative overflow-hidden"
-          variants={itemVariants}
-        >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-300/20 to-accent-300/20 rounded-full blur-3xl -z-0" />
-          <div className="relative z-10">
-            <motion.h1 
-              className="text-4xl font-bold mb-2 gradient-text"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
-            >
-              Welcome Back
-            </motion.h1>
-            <p className="text-gray-600 mb-6">Sign in to continue to Canteen Connect</p>
-            
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: error ? 1 : 0, height: error ? 'auto' : 0 }}
-              className="mb-4 overflow-hidden"
-            >
-              {error && (
-                <motion.div 
-                  className="p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 font-medium"
-                  initial={{ x: -20 }}
-                  animate={{ x: 0 }}
-                >
-                  {error}
-                </motion.div>
-              )}
-            </motion.div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2b145e] to-[#14082f] px-6">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-16 items-center">
+        {/* LEFT */}
+        <div className="text-white">
+          <h1 className="text-5xl font-extrabold mb-4">
+            Canteen{" "}
+            <span className="text-purple-400">
+              Connect
+            </span>
+          </h1>
+          <p className="text-lg text-white/70 max-w-md">
+            One login for students, staff &
+            admins.
+            <br />
+            Fast. Simple. Secure.
+          </p>
+        </div>
 
-            <form className="space-y-4" onSubmit={submit}>
-              <motion.div variants={itemVariants}>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-primary-400 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                />
-              </motion.div>
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full btn-primary py-3 text-lg font-bold"
-              >
-                Login
-              </motion.button>
-            </form>
+        {/* RIGHT */}
+        <div className="glass p-8 rounded-2xl w-full max-w-md ml-auto">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Welcome Back
+          </h2>
 
-            <motion.p 
-              className="text-sm text-gray-600 mt-6 text-center"
-              variants={itemVariants}
+          <form
+            onSubmit={handleLogin}
+            className="space-y-4"
+          >
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+              required
+              className="w-full px-4 py-3 rounded-lg bg-white/10 text-white"
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
+              required
+              className="w-full px-4 py-3 rounded-lg bg-white/10 text-white"
+            />
+
+            {error && (
+              <p className="text-red-400 text-sm">
+                {error}
+              </p>
+            )}
+
+            <button
+              disabled={loading}
+              className="w-full py-3 rounded-lg bg-purple-600 font-bold text-white"
             >
-              No account?{' '}
-              <Link 
-                to="/register" 
-                className="text-primary-600 font-semibold hover:text-primary-700 transition-colors"
-              >
-                Register here
-              </Link>
-            </motion.p>
-          </div>
-        </motion.div>
-      </motion.div>
+              {loading ? "Logging in…" : "LOGIN"}
+            </button>
+          </form>
+
+          <p className="text-sm text-white/60 text-center mt-6">
+            Don&apos;t have an account?{" "}
+            <Link
+              to="/register"
+              className="text-purple-400 hover:underline"
+            >
+              Register
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Login;
-
+}

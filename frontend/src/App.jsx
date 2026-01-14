@@ -1,51 +1,102 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import NavBar from './components/NavBar';
-import Home from './pages/Home';
-import Menu from './pages/Menu';
-import ItemDetail from './pages/ItemDetail';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Orders from './pages/Orders';
-import AdminDashboard from './pages/AdminDashboard';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import { useAuthStore } from './state/store';
+// src/App.jsx
+import { useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { useAuthStore } from "./state/store";
 
-const App = () => {
-  const { user } = useAuthStore();
-  
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Menu from "./pages/Menu";
+import Orders from "./pages/Orders";
+import Checkout from "./pages/Checkout";
+
+export default function App() {
+  const { initialize, initialized, user } =
+    useAuthStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  // ⛔ wait till auth loads
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50">
-      <NavBar />
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route 
-          path="/menu" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <Menu />} 
+        {/* 🔑 ROOT ROUTE FIX */}
+        <Route
+          path="/"
+          element={
+            user ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
-        <Route 
-          path="/menu/:id" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <ItemDetail />} 
+
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/register"
+          element={<Register />}
         />
-        <Route 
-          path="/cart" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <Cart />} 
+
+        <Route
+          path="/dashboard"
+          element={
+            user ? <Dashboard /> : <Navigate to="/login" />
+          }
         />
-        <Route 
-          path="/checkout" 
-          element={user?.role === 'admin' ? <Navigate to="/admin" /> : <Checkout />} 
-        />
-        <Route path="/orders" element={<Orders />} />
+
         <Route
           path="/admin"
-          element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />}
+          element={
+            user?.role === "admin" ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/menu"
+          element={
+            user ? <Menu /> : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/orders"
+          element={
+            user ? <Orders /> : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/checkout"
+          element={
+            user ? (
+              <Checkout />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
       </Routes>
-    </div>
+    </BrowserRouter>
   );
-};
-
-export default App;
-
+}

@@ -1,30 +1,46 @@
-import { create } from 'zustand';
+// src/state/store.js
+import { create } from "zustand";
+import { supabase } from "../lib/supabase";
 
 export const useAuthStore = create((set) => ({
   user: null,
-  token: null,
-  login: (user, token) => set({ user, token }),
-  logout: () => set({ user: null, token: null }),
-}));
+  initialized: false,
 
-export const useCartStore = create((set, get) => ({
-  items: [],
-  addItem: (menuItem) => {
-    const existing = get().items.find((i) => i.menuId === menuItem.id);
-    if (existing) {
-      return set({
-        items: get().items.map((i) =>
-          i.menuId === menuItem.id ? { ...i, qty: i.qty + 1 } : i
-        ),
-      });
+  initialize: async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      set({ user: null, initialized: true });
+      return;
     }
-    return set({ items: [...get().items, { menuId: menuItem.id, qty: 1, menuItem }] });
-  },
-  updateQty: (menuId, qty) =>
-    set({
-      items: get().items.map((i) => (i.menuId === menuId ? { ...i, qty: Math.max(1, qty) } : i)),
-    }),
-  removeItem: (menuId) => set({ items: get().items.filter((i) => i.menuId !== menuId) }),
-  clear: () => set({ items: [] }),
-}));
 
+    const { data: profile, error } = await supabase
+      .from("users")
+      .select("id, name, email, role")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Profile fetch error:", error);
+      set({ user: null, initialized: true });
+      return;
+    }
+
+    set({
+      user: profile,
+      initialized: true,
+    });
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
+
+    // 🔑 IMPORTANT FIX
+    set({
+      user: null,
+      initialized: true,
+    });
+  },
+}));

@@ -86,3 +86,17 @@ curl -X PATCH http://localhost:4000/api/orders/o1/status \
 
 ## CanteenConnect
 A full-stack canteen management system.
+
+## Setup & Run Locally
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm or yarn
+
+### Backend Setup
+```bash
+cd backend
+npm install
+cp env.example .env
+npm run dev
+

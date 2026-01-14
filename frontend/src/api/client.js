@@ -1,38 +1,116 @@
-import axios from 'axios';
-import { io } from 'socket.io-client';
-import { useAuthStore } from '../state/store';
+// src/api/client.js
+import { supabase } from "../lib/supabase";
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
+/* =========================
+   MENU
+   Table: public.menu
+========================= */
 
-export const api = axios.create({
-  baseURL: `${API_BASE}/api`,
-});
+export const getMenu = async () => {
+  const { data, error } = await supabase
+    .from("menu")
+    .select("*")
+    .order("name", { ascending: true });
 
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-let socket;
-export const getSocket = () => {
-  if (!socket) {
-    const { user } = useAuthStore.getState();
-    socket = io(API_BASE, {
-      query: { role: user?.role, userId: user?.id },
-    });
+  if (error) {
+    console.error("Menu fetch error:", error);
+    throw error;
   }
-  return socket;
+
+  return data;
 };
 
-export const fetchMenu = () => api.get('/menu').then((r) => r.data);
-export const fetchMenuItem = (id) => api.get(`/menu/${id}`).then((r) => r.data);
-export const login = (payload) => api.post('/auth/login', payload).then((r) => r.data);
-export const register = (payload) => api.post('/auth/register', payload).then((r) => r.data);
-export const checkout = (items) => api.post('/cart/checkout', { items }).then((r) => r.data);
-export const getOrders = () => api.get('/orders').then((r) => r.data);
-export const getAllOrders = () => api.get('/orders/all').then((r) => r.data);
-export const updateOrderStatus = (id, status) =>
-  api.patch(`/orders/${id}/status`, { status }).then((r) => r.data);
-export const getBills = () => api.get('/bills').then((r) => r.data);
+export const fetchMenuItem = async (id) => {
+  const { data, error } = await supabase
+    .from("menu")
+    .select("*")
+    .eq("id", id)
+    .single();
 
+  if (error) {
+    console.error("Menu item fetch error:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/* =========================
+   ORDERS
+   Table: public.orders
+========================= */
+
+export const getOrders = async (userId) => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Orders fetch error:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getAllOrders = async () => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("All orders fetch error:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateOrderStatus = async (orderId, status) => {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ status })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Order status update error:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/* =========================
+   CHECKOUT
+========================= */
+
+export const checkout = async (items, user) => {
+  const total = items.reduce(
+    (sum, i) => sum + i.price * i.qty,
+    0
+  );
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .insert({
+      user_id: user.id,
+      customer_name: user.name,
+      items,
+      total,
+      status: "placed",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Checkout error:", error);
+    throw error;
+  }
+
+  return { order };
+};
