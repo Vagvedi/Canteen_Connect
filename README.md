@@ -30,23 +30,30 @@ Full-stack web application for a college canteen management system. Students bro
 - **Testing**: Jest 29.7.0, Supertest 6.3.4
 
 ## Setup
-1) Install deps
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm or yarn
+
+### Installation
+1. Install dependencies for both frontend and backend:
 ```bash
 cd backend && npm install
 cd ../frontend && npm install
 ```
 
-2) Environment
-- Backend: copy `backend/env.example` to `.env` (same dir) and set `JWT_SECRET`, `PORT` (optional).
-- Frontend: copy `frontend/env.example` to `.env` and set `VITE_API_BASE`, `VITE_SOCKET_URL` (point to backend).
+2. Configure environment variables:
+   - **Backend**: Copy `backend/env.example` to `backend/.env` and set `JWT_SECRET`, `PORT` (optional, defaults to 4000)
+   - **Frontend**: Copy `frontend/env.example` to `frontend/.env` and set `VITE_API_BASE`, `VITE_SOCKET_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
-3) Run dev servers
+3. Run development servers:
 ```bash
 cd backend && npm run dev   # http://localhost:4000
 cd frontend && npm run dev  # http://localhost:5173
 ```
 
-## Backend endpoints (examples)
+## Backend API Endpoints
+
 - `POST /api/auth/register` → `{name,email,password,role}` → `201 { user, token }`
 - `POST /api/auth/login` → `{email,password}` → `200 { user, token }`
 - `GET /api/menu` → menu list
@@ -56,43 +63,52 @@ cd frontend && npm run dev  # http://localhost:5173
 - `GET /api/orders/all` (staff) → all orders
 - `PATCH /api/orders/:id/status` (staff) → `{status}` → `200 {order}`
 
-### Sample cURL
-```bash
-# Register student
-curl -X POST http://localhost:4000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test","email":"test@uni.edu","password":"password","role":"student"}'
+## Project Structure
 
-# Login (store token)
-TOKEN=$(curl -s -X POST http://localhost:4000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"alice@uni.edu","password":"password"}' | jq -r .token)
-
-# Get menu
-curl http://localhost:4000/api/menu
-
-# Checkout cart (student token)
-curl -X POST http://localhost:4000/api/cart/checkout \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"items":[{"menuId":"m1","qty":1}]}'
-
-# Staff get all orders
-STAFF_TOKEN=$(curl -s -X POST http://localhost:4000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"staff@uni.edu","password":"password"}' | jq -r .token)
-curl -H "Authorization: Bearer $STAFF_TOKEN" http://localhost:4000/api/orders/all
-
-# Update order status
-curl -X PATCH http://localhost:4000/api/orders/o1/status \
-  -H "Authorization: Bearer $STAFF_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"preparing"}'
+### Frontend
 ```
-
-## Frontend pages
-- Home, Menu (category browsing), Item detail, Cart, Checkout, Orders (student), Staff dashboard, Login/Register
-- Components: NavBar, MenuCard, CartSidebar, OrderStatusBadge, StaffOrderCard
+frontend/
+├── src/
+│   ├── main.jsx         # React entry point
+│   ├── App.jsx          # Main app component
+│   ├── index.css        # Global styles
+│   ├── setupTests.js    # Test configuration
+│   ├── api/
+│   │   └── client.js    # Axios HTTP client with auth
+│   ├── lib/
+│   │   └── supabase.js  # Supabase integration
+│   ├── components/      # Reusable UI components
+│   │   ├── AuthLayout.jsx
+│   │   ├── Bill.jsx
+│   │   ├── CartSidebar.jsx
+│   │   ├── MenuCard.jsx
+│   │   ├── NavBar.jsx
+│   │   ├── NavBar.test.jsx
+│   │   ├── OrderStatusBadge.jsx
+│   │   └── StaffOrderCard.jsx
+│   ├── pages/           # Full page components
+│   │   ├── AdminDashboard.jsx
+│   │   ├── Cart.jsx
+│   │   ├── Checkout.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── DashboardTabs.jsx
+│   │   ├── Home.jsx
+│   │   ├── ItemDetail.jsx
+│   │   ├── Login.jsx
+│   │   ├── Menu.jsx
+│   │   ├── Orders.jsx
+│   │   └── Register.jsx
+│   └── state/
+│       ├── cartStore.js # Zustand cart store
+│       └── store.js     # Zustand auth store
+├── index.html
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+├── postcss.config.js
+├── env.example
+└── ...
+```
 
 ## Features
 
@@ -116,6 +132,7 @@ curl -X PATCH http://localhost:4000/api/orders/o1/status \
 - Socket.io integration for instant order updates
 - Live order status notifications
 - Real-time cart synchronization
+- Supabase real-time subscriptions
 
 ## Supabase Integration
 
@@ -125,84 +142,10 @@ CanteenConnect leverages **Supabase** for:
 - **Real-time Features**: Supabase real-time subscriptions for live data synchronization
 - **Storage**: Optional file storage for menu item images
 
-Supabase provides a scalable, open-source backend alternative with built-in real-time capabilities, making it ideal for applications requiring live updates like order tracking.
-
-## Architecture
-
-### Backend Structure
-```
-backend/
-├── src/
-│   ├── index.js          # Server entry point
-│   ├── auth.js          # Authentication logic
-│   ├── data.js          # In-memory database & seed data
-│   ├── routes/
-│   │   ├── auth.js      # Auth endpoints (register, login)
-│   │   ├── menu.js      # Menu endpoints (list, detail)
-│   │   └── orders.js    # Order endpoints
-│   └── middleware/       # JWT and auth middleware
-├── tests/
-│   └── api.test.js      # API integration tests
-└── public/              # Static files
-```
-
-### Frontend Structure
-```
-frontend/src/
-├── App.jsx              # Main app component
-├── main.jsx             # React entry point
-├── api/
-│   └── client.js        # Axios HTTP client with auth
-├── lib/
-│   └── supabase.js      # Supabase integration
-├── components/          # Reusable UI components
-│   ├── NavBar.jsx
-│   ├── MenuCard.jsx
-│   ├── CartSidebar.jsx
-│   ├── OrderStatusBadge.jsx
-│   └── ...
-├── pages/               # Full page components
-│   ├── Home.jsx
-│   ├── Menu.jsx
-│   ├── ItemDetail.jsx
-│   ├── Cart.jsx
-│   ├── Checkout.jsx
-│   ├── Orders.jsx
-│   ├── AdminDashboard.jsx
-│   ├── Login.jsx
-│   └── Register.jsx
-├── state/
-│   └── store.js         # Zustand store (auth + cart)
-├── index.css            # Global styles
-└── setupTests.js        # Test configuration
-```
-
-## State & real-time
-- Zustand stores auth + cart
-- Axios client auto-attaches JWT
-- Socket.io client listens for `order:update` and `order:new`
-
-## Tests
-- Backend: Jest + Supertest smoke test (`npm test` in backend)
-- Frontend: Vitest + Testing Library (`npm test` in frontend)
-
-## Project Information
-
-<<<<<<< HEAD
-### Seed Data & Default Users
+## Default Users & Seed Data
 - Default Student: `alice@uni.edu` (password: `password`)
 - Default Staff: `staff@uni.edu` (password: `password`)
 - Uses in-memory seed data for demo purposes
-
-### Environment Variables
-- Backend: `JWT_SECRET`, `PORT` (optional, defaults to 4000)
-- Frontend: `VITE_API_BASE`, `VITE_SOCKET_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-
-### Deployment Notes
-- Replace secrets in `.env` before deploying
-- Keep dev secret out of commits
-- Frontend deployed on GitHub Pages
-- Backend can be deployed to any Node.js hosting (Heroku, Railway, Vercel, etc.)
 
 ## Development Scripts
 
@@ -222,23 +165,15 @@ npm test         # Run tests with Vitest
 npm run deploy   # Deploy to GitHub Pages
 ```
 
+## Testing
+- Backend: Jest + Supertest (`npm test` in backend)
+- Frontend: Vitest + Testing Library (`npm test` in frontend)
+
+## Deployment Notes
+- Replace secrets in `.env` before deploying
+- Keep dev secrets out of commits
+- Frontend can be deployed on GitHub Pages, Vercel, or Netlify
+- Backend can be deployed to any Node.js hosting (Heroku, Railway, Render, etc.)
+
 ## License
 MIT
-=======
-## CanteenConnect
-A full-stack canteen management system.
-
-## Setup & Run Locally
-
-### Prerequisites
-- Node.js (v18+ recommended)
-- npm or yarn
-
-### Backend Setup
-```bash
-cd backend
-npm install
-cp env.example .env
-npm run dev
-
->>>>>>> 7fdc94fc2010042a76c1ebe40d049018d0514030
