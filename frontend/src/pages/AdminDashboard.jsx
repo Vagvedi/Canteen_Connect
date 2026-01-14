@@ -1,116 +1,297 @@
-import { useState } from "react";
-import NavBar from "../components/NavBar";
+// src/pages/AdminDashboard.jsx
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  getAllOrders,
+  updateOrderStatus,
+  getMenu,
+} from "../api/client";
+import { useAuthStore } from "../state/store";
+import { Navigate, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+
+const STATUS_OPTIONS = [
+  "placed",
+  "preparing",
+  "ready",
+  "completed",
+  "cancelled",
+];
+
+const CATEGORIES = [
+  "Beverages",
+  "Snacks",
+  "Meals",
+  "Desserts",
+  "Combos",
+];
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("add");
+  const { user, clearUser } = useAuthStore();
+  const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState("orders");
+
+  /* ---------------- ORDERS ---------------- */
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  /* ---------------- MENU ---------------- */
+  const [menu, setMenu] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+
+  const [newItem, setNewItem] = useState({
+    name: "",
+    price: "",
+    category: CATEGORIES[0],
+  });
+
+  /* ---------------- ROLE GUARD ---------------- */
+  if (!user) return <Navigate to="/login" />;
+  if (user.role !== "admin")
+    return <Navigate to="/dashboard" />;
+
+  /* ---------------- LOGOUT ---------------- */
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    clearUser();
+    navigate("/login");
+  };
+
+  /* ---------------- FETCH ORDERS ---------------- */
+  useEffect(() => {
+    (async () => {
+      const data = await getAllOrders();
+      setOrders(data || []);
+      setOrdersLoading(false);
+    })();
+  }, []);
+
+  /* ---------------- FETCH MENU ---------------- */
+  useEffect(() => {
+    (async () => {
+      const data = await getMenu();
+      setMenu(data || []);
+      setMenuLoading(false);
+    })();
+  }, []);
+
+  /* ---------------- ORDER STATUS ---------------- */
+  const handleStatusChange = async (id, status) => {
+    const updated = await updateOrderStatus(id, status);
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? updated : o))
+    );
+  };
+
+  /* ---------------- MENU ACTIONS ---------------- */
+  const addMenuItem = async () => {
+    if (!newItem.name || !newItem.price) return;
+
+    const { data } = await supabase
+      .from("menu")
+      .insert({
+        name: newItem.name,
+        price: Number(newItem.price),
+        category: newItem.category,
+        available: true,
+      })
+      .select()
+      .single();
+
+    setMenu((prev) => [...prev, data]);
+    setNewItem({
+      name: "",
+      price: "",
+      category: CATEGORIES[0],
+    });
+  };
+
+  const toggleAvailability = async (id, available) => {
+    const { data } = await supabase
+      .from("menu")
+      .update({ available })
+      .eq("id", id)
+      .select()
+      .single();
+
+    setMenu((prev) =>
+      prev.map((i) => (i.id === id ? data : i))
+    );
+  };
+
+  /* ---------------- UI ---------------- */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0627] via-[#1a0b3d] to-[#0b021a] text-white">
-      
-      {/* TOP NAV */}
-      <NavBar />
+    <motion.div
+      className="max-w-6xl mx-auto px-6 py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      {/* ===== TOP BAR ===== */}
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-4xl font-bold gradient-text mb-1">
+            Admin Dashboard
+          </h1>
+          <p className="text-white/70">
+            Manage system (orders & menu)
+          </p>
+        </div>
 
-      {/* PAGE HEADER */}
-      <div className="max-w-7xl mx-auto px-6 pt-10 pb-6">
-        <h1 className="text-4xl font-bold">
-          Admin <span className="text-purple-400">Dashboard</span>
-        </h1>
-        <p className="text-gray-300 mt-1">
-          Manage menu items and monitor orders
-        </p>
+        {/* USER + ROLE + LOGOUT */}
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="font-semibold">{user.name || "Admin"}</p>
+            <span className="text-xs px-3 py-1 rounded-full bg-purple-600">
+              ADMIN
+            </span>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 transition px-4 py-2 rounded-xl font-semibold"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* TABS */}
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex gap-3 mb-6">
-          <TabButton
-            label="Add Menu Item"
-            active={activeTab === "add"}
-            onClick={() => setActiveTab("add")}
-          />
-          <TabButton
-            label="Menu Items"
-            active={activeTab === "menu"}
-            onClick={() => setActiveTab("menu")}
-          />
-          <TabButton
-            label="Orders"
-            active={activeTab === "orders"}
-            onClick={() => setActiveTab("orders")}
-          />
-        </div>
-
-        {/* CONTENT CARD */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-xl">
-          {activeTab === "add" && <AddMenuPlaceholder />}
-          {activeTab === "menu" && <MenuPlaceholder />}
-          {activeTab === "orders" && <OrdersPlaceholder />}
-        </div>
+      <div className="flex gap-3 mb-8">
+        {["orders", "menu"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-5 py-2 rounded-xl font-semibold ${
+              activeTab === tab
+                ? "bg-purple-600 text-white"
+                : "bg-white/10 text-white/70 hover:bg-white/20"
+            }`}
+          >
+            {tab.toUpperCase()}
+          </button>
+        ))}
       </div>
-    </div>
-  );
-}
 
-/* ------------------------------------------------------------------ */
-/* --------------------------- SUB COMPONENTS ------------------------ */
-/* ------------------------------------------------------------------ */
+      {/* ---------------- ORDERS ---------------- */}
+      {activeTab === "orders" && (
+        <>
+          {ordersLoading ? (
+            <p>Loading orders…</p>
+          ) : orders.length === 0 ? (
+            <p className="text-white/60">No orders yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((o) => (
+                <div key={o.id} className="glass p-6 rounded-2xl">
+                  <div className="flex justify-between mb-3">
+                    <div>
+                      <p className="font-bold text-lg">₹{o.total}</p>
+                      <p className="text-sm text-white/60">
+                        {o.customer_name}
+                      </p>
+                    </div>
 
-function TabButton({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-5 py-2 rounded-xl font-semibold transition ${
-        active
-          ? "bg-purple-600 text-white"
-          : "bg-white/10 text-white hover:bg-white/20"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+                    <select
+                      value={o.status}
+                      onChange={(e) =>
+                        handleStatusChange(o.id, e.target.value)
+                      }
+                      className="bg-[#1b1035] text-white px-3 py-2 rounded-lg border border-white/10"
+                    >
+                      {STATUS_OPTIONS.map((s) => (
+                        <option key={s} value={s} className="bg-[#1b1035]">
+                          {s.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-function AddMenuPlaceholder() {
-  return (
-    <div className="space-y-2">
-      <h2 className="text-2xl font-bold">Add Menu Item</h2>
-      <p className="text-gray-300">
-        Yahan se admin naye food items add karega.
-      </p>
+                  {o.items?.map((i, idx) => (
+                    <p key={idx} className="text-sm text-white/80">
+                      {i.name} × {i.qty}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
-      <div className="mt-6 p-4 rounded-xl bg-black/30 text-gray-400 text-sm">
-        🚧 Form logic next step me add hoga (price, category, availability).
-      </div>
-    </div>
-  );
-}
+      {/* ---------------- MENU ---------------- */}
+      {activeTab === "menu" && (
+        <>
+          <div className="glass p-6 rounded-2xl mb-6 space-y-4">
+            <h2 className="font-semibold text-lg">Add Menu Item</h2>
 
-function MenuPlaceholder() {
-  return (
-    <div className="space-y-2">
-      <h2 className="text-2xl font-bold">Menu Items</h2>
-      <p className="text-gray-300">
-        Existing menu items yahan list honge.
-      </p>
+            <input
+              placeholder="Name"
+              value={newItem.name}
+              onChange={(e) =>
+                setNewItem({ ...newItem, name: e.target.value })
+              }
+              className="w-full px-4 py-3 rounded-xl bg-white/10"
+            />
 
-      <div className="mt-6 p-4 rounded-xl bg-black/30 text-gray-400 text-sm">
-        📦 Supabase se menu fetch + edit yahan aayega.
-      </div>
-    </div>
-  );
-}
+            <input
+              placeholder="Price"
+              type="number"
+              value={newItem.price}
+              onChange={(e) =>
+                setNewItem({ ...newItem, price: e.target.value })
+              }
+              className="w-full px-4 py-3 rounded-xl bg-white/10"
+            />
 
-function OrdersPlaceholder() {
-  return (
-    <div className="space-y-2">
-      <h2 className="text-2xl font-bold">Orders</h2>
-      <p className="text-gray-300">
-        Saare incoming orders aur unka status yahan dikhega.
-      </p>
+            <select
+              value={newItem.category}
+              onChange={(e) =>
+                setNewItem({ ...newItem, category: e.target.value })
+              }
+              className="w-full px-4 py-3 rounded-xl bg-[#1b1035] text-white"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c} className="bg-[#1b1035]">
+                  {c}
+                </option>
+              ))}
+            </select>
 
-      <div className="mt-6 p-4 rounded-xl bg-black/30 text-gray-400 text-sm">
-        🔄 Realtime orders + status update (admin only).
-      </div>
-    </div>
+            <button
+              onClick={addMenuItem}
+              className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl font-semibold"
+            >
+              Add Item
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {menu.map((i) => (
+              <div
+                key={i.id}
+                className="glass p-4 rounded-xl flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold">
+                    {i.name} – ₹{i.price}
+                  </p>
+                  <p className="text-sm text-white/60">{i.category}</p>
+                </div>
+
+                <button
+                  onClick={() => toggleAvailability(i.id, !i.available)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold ${
+                    i.available ? "bg-green-500" : "bg-red-500"
+                  }`}
+                >
+                  {i.available ? "AVAILABLE" : "HIDDEN"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </motion.div>
   );
 }

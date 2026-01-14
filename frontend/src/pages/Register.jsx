@@ -1,124 +1,204 @@
+// src/pages/Register.jsx
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { useAuthStore } from "../state/store";
-import AuthLayout from "../components/AuthLayout";
 
 export default function Register() {
-  const initialize = useAuthStore((s) => s.initialize);
+  const navigate = useNavigate();
 
   const [role, setRole] = useState("student");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [roll, setRoll] = useState("");
+  const [registerNumber, setRegisterNumber] = useState("");
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setError("");
 
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      const { data, error: authError } =
+        await supabase.auth.signUp({
+          email,
+          password,
+        });
 
-    if (authError) {
-      setError(authError.message);
+      if (authError) {
+        const { error: signInError } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+        if (signInError) throw signInError;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error("Auth failed");
+
+      const { error: profileError } =
+        await supabase.from("users").upsert(
+          {
+            id: user.id,
+            email,
+            name,
+            role,
+            register_number:
+              role === "student"
+                ? registerNumber
+                : null,
+          },
+          { onConflict: "id" }
+        );
+
+      if (profileError) throw profileError;
+
+      navigate(
+        role === "admin"
+          ? "/admin"
+          : "/dashboard",
+        { replace: true }
+      );
+    } catch (err) {
+      console.error("Register error:", err);
+      setError(
+        err.message ||
+          "Registration failed"
+      );
+    } finally {
       setLoading(false);
-      return;
     }
-
-    await supabase.from("users").insert({
-      id: data.user.id,
-      name,
-      email,
-      role,
-      roll_number: role === "student" ? roll : null,
-    });
-
-    await initialize();
-    setLoading(false);
   };
 
   return (
-    <AuthLayout
-      title="Create Account"
-      subtitle="One system for students, staff & admins"
-    >
-      <form onSubmit={handleRegister} className="space-y-5">
-
-        {/* ROLE TOGGLE */}
-        <div className="grid grid-cols-3 gap-2">
-          {["student", "staff", "admin"].map((r) => (
-            <button
-              type="button"
-              key={r}
-              onClick={() => setRole(r)}
-              className={`py-2 rounded-lg font-semibold ${
-                role === r
-                  ? "bg-purple-600 text-white"
-                  : "bg-black/30 text-white/70"
-              }`}
-            >
-              {r.toUpperCase()}
-            </button>
-          ))}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2b145e] to-[#14082f] px-6">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-16 items-center">
+        {/* LEFT */}
+        <div className="text-white">
+          <h1 className="text-5xl font-extrabold mb-4">
+            Canteen{" "}
+            <span className="text-purple-400">
+              Connect
+            </span>
+          </h1>
+          <p className="text-lg text-white/70 max-w-md">
+            One system for students, staff &
+            admins.
+            <br />
+            Fast. Simple. Secure.
+          </p>
         </div>
 
-        <input
-          placeholder="Full Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
-        />
+        {/* RIGHT */}
+        <div className="glass p-8 rounded-2xl w-full max-w-md ml-auto">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Create Account
+          </h2>
 
-        <input
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
-        />
+          {/* ROLE TABS */}
+          <div className="flex gap-3 mb-6">
+            {["student", "staff", "admin"].map(
+              (r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${
+                    role === r
+                      ? "bg-purple-500 text-white"
+                      : "bg-white/10 text-white/70 hover:bg-white/20"
+                  }`}
+                >
+                  {r.toUpperCase()}
+                </button>
+              )
+            )}
+          </div>
 
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
-        />
+          <form
+            onSubmit={handleRegister}
+            className="space-y-4"
+          >
+            <input
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
+              required
+              className="w-full px-4 py-3 rounded-lg bg-white/10 text-white"
+            />
 
-        {role === "student" && (
-          <input
-            placeholder="Roll Number"
-            value={roll}
-            onChange={(e) => setRoll(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/20 text-white placeholder-white/50"
-          />
-        )}
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+              required
+              className="w-full px-4 py-3 rounded-lg bg-white/10 text-white"
+            />
 
-        <button
-          disabled={loading}
-          className="w-full py-3 rounded-lg bg-purple-600 hover:bg-purple-700 transition font-bold text-white"
-        >
-          {loading ? "Creating..." : "CREATE ACCOUNT"}
-        </button>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
+              required
+              className="w-full px-4 py-3 rounded-lg bg-white/10 text-white"
+            />
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+            {role === "student" && (
+              <input
+                placeholder="Register Number"
+                value={registerNumber}
+                onChange={(e) =>
+                  setRegisterNumber(
+                    e.target.value
+                  )
+                }
+                required
+                className="w-full px-4 py-3 rounded-lg bg-white/10 text-white"
+              />
+            )}
 
-        <p className="text-sm text-white/70 text-center">
-          Already have an account?{" "}
-          <a href="/login" className="text-purple-400 font-semibold">
-            Login
-          </a>
-        </p>
+            {error && (
+              <p className="text-red-400 text-sm">
+                {error}
+              </p>
+            )}
 
-      </form>
-    </AuthLayout>
+            <button
+              disabled={loading}
+              className="w-full py-3 rounded-lg bg-purple-600 font-bold text-white"
+            >
+              {loading
+                ? "Creating..."
+                : "CREATE ACCOUNT"}
+            </button>
+          </form>
+
+          {/* 🔑 LOGIN LINK (NEW – MATCHES LOGIN PAGE STYLE) */}
+          <p className="text-sm text-white/60 text-center mt-6">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-purple-400 hover:underline"
+            >
+              Login
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

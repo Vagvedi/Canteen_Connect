@@ -188,6 +188,7 @@ frontend/src/
 
 ## Project Information
 
+<<<<<<< HEAD
 ### Seed Data & Default Users
 - Default Student: `alice@uni.edu` (password: `password`)
 - Default Staff: `staff@uni.edu` (password: `password`)
@@ -223,3 +224,21 @@ npm run deploy   # Deploy to GitHub Pages
 
 ## License
 MIT
+=======
+## CanteenConnect
+A full-stack canteen management system.
+
+## Setup & Run Locally
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm or yarn
+
+### Backend Setup
+```bash
+cd backend
+npm install
+cp env.example .env
+npm run dev
+
+>>>>>>> 7fdc94fc2010042a76c1ebe40d049018d0514030

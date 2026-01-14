@@ -23,7 +23,6 @@ body {
 
 /* =========================
    REUSABLE GLASS UTILITY
-   (Safe – does NOT break Tailwind)
    ========================= */
 
 .glass {
@@ -34,8 +33,120 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* =========================
-   ❌ REMOVED (IMPORTANT)
-   page, split, card, tabs
-   — these were breaking Tailwind layouts
-   ========================= */
+/* =====================================================
+   🔒 LEGACY AUTH LAYOUT (DO NOT TOUCH)
+   Used by Login.jsx & Register.jsx
+   ===================================================== */
+
+/* PAGE WRAPPER */
+.page {
+  min-height: 100vh;
+  padding: 80px;
+  display: flex;
+  align-items: center;
+}
+
+/* SPLIT SCREEN */
+.split {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 80px;
+}
+
+/* LEFT CONTENT (Login + Register SAME) */
+.left h1 {
+  font-size: 56px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.left span {
+  color: #9b5cff;
+}
+
+.left p {
+  max-width: 420px;
+  opacity: 0.85;
+  line-height: 1.6;
+}
+
+/* RIGHT CARD */
+.card {
+  width: 380px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* CARD TITLE */
+.card h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+/* INPUTS */
+.card input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  outline: none;
+}
+
+.card input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* BUTTON */
+.card button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #9b5cff;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* FOOTER TEXT */
+.card p {
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+/* ROLE TABS */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.tabs .active {
+  background: #9b5cff;
+  border-color: transparent;
+}
