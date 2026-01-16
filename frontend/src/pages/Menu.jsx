@@ -18,7 +18,12 @@ export default function Menu() {
       try {
         const data = await getMenu();
         if (isMounted) {
-          setItems(data || []);
+          // Filter out unavailable items for regular users (students/staff)
+          // Admin can see all items in AdminDashboard
+          const availableItems = (data || []).filter(
+            (item) => item.available === true
+          );
+          setItems(availableItems);
         }
       } catch (err) {
         console.error("Menu fetch error:", err);

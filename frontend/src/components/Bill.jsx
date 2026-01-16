@@ -1,189 +1,190 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../state/store';
+import { useNavigate } from 'react-router-dom';
+import { useOrderTimer } from '../hooks/useOrderTimer';
 
-const Bill = ({ bill, onClick }) => {
-  const { user } = useAuthStore();
-  const [timeRemaining, setTimeRemaining] = useState(null);
-  const [isExpired, setIsExpired] = useState(false);
+const Bill = ({ bill, onClose }) => {
+  const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
+  const { formattedTime, isExpired } = useOrderTimer(bill);
 
-  useEffect(() => {
-    if (!bill?.expiresAt) return;
+  if (!bill) return null;
 
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const expires = new Date(bill.expiresAt).getTime();
-      const diff = expires - now;
-
-      if (diff <= 0) {
-        setIsExpired(true);
-        setTimeRemaining({ hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeRemaining({ hours, minutes, seconds });
-      setIsExpired(false);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [bill?.expiresAt]);
-
-  const handleClick = () => {
-    if (onClick) {
-      onClick(bill);
-    } else {
-      setIsExpanded(!isExpanded);
-    }
-  };
-
-  const formatTime = (time) => {
-    if (!time) return '00:00:00';
-    const { hours, minutes, seconds } = time;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  };
+  const orderCode = bill.order_code || 'N/A';
+  const registerNumber = bill.register_number;
+  const isStudent = registerNumber !== null && registerNumber !== undefined;
 
   return (
-    <motion.div
-      className={`glass p-6 rounded-2xl shadow-xl cursor-pointer transition-all duration-300 ${
-        isExpired ? 'opacity-60 border-2 border-red-300' : 'hover:shadow-2xl hover:scale-[1.02]'
-      }`}
-      onClick={handleClick}
-      whileHover={{ scale: isExpired ? 1 : 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      {/* Bill Number - Top Center, Bold, Bigger */}
-      <div className="text-center mb-4">
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
         <motion.div
-          className={`text-4xl font-bold gradient-text ${isExpired ? 'line-through text-red-500' : ''}`}
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200 }}
+          className="glass p-8 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {bill?.billNumber || 'N/A'}
-        </motion.div>
-        {isExpired && (
-          <motion.p
-            className="text-red-600 font-semibold mt-2"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl font-bold"
           >
-            EXPIRED
-          </motion.p>
-        )}
-      </div>
+            ×
+          </button>
 
-      {/* Timer */}
-      {!isExpired && timeRemaining && (
-        <motion.div
-          className="text-center mb-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 rounded-full">
-            <span className="text-lg">⏱️</span>
-            <span className="font-mono font-bold text-primary-700 text-lg">
-              {formatTime(timeRemaining)}
-            </span>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Summary View */}
-      {!isExpanded && (
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Customer:</span>
-            <span className="font-semibold">{bill?.customerName || 'N/A'}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Date:</span>
-            <span className="font-semibold">
-              {bill?.createdAt ? new Date(bill.createdAt).toLocaleDateString() : 'N/A'}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Items:</span>
-            <span className="font-semibold">{bill?.items?.length || 0} item(s)</span>
-          </div>
-          <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-            <span className="text-lg font-bold text-gray-700">Total:</span>
-            <span className="text-2xl font-bold gradient-text">₹{bill?.total || 0}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Expanded View */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-4 pt-4 border-t-2 border-gray-200 space-y-3"
-          >
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Bill Number:</span>
-                <span className="font-bold text-lg">{bill?.billNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Customer Name:</span>
-                <span className="font-semibold">{bill?.customerName}</span>
-              </div>
-              {bill?.registerNumber && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Registration Number:</span>
-                  <span className="font-semibold">{bill.registerNumber}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-gray-600">Order Date:</span>
-                <span className="font-semibold">
-                  {bill?.createdAt ? new Date(bill.createdAt).toLocaleString() : 'N/A'}
-                </span>
-              </div>
-              {bill?.expiresAt && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Expires At:</span>
-                  <span className="font-semibold">
-                    {new Date(bill.expiresAt).toLocaleString()}
+          {/* Order Code - Top Center, Bold, Highlighted */}
+          <div className="text-center mb-6">
+            <p className="text-sm text-white/60 mb-2 uppercase tracking-wider">
+              Order Code
+            </p>
+            <motion.div
+              className="text-5xl font-black gradient-text tracking-wider"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+            >
+              {orderCode}
+            </motion.div>
+            
+            {/* Timer Display */}
+            {bill.expires_at && bill.status !== 'completed' && bill.status !== 'cancelled' && (
+              <motion.div
+                className="mt-4"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <p className="text-xs text-white/60 mb-2 uppercase tracking-wider">
+                  Time Remaining
+                </p>
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
+                  isExpired 
+                    ? 'bg-red-500/30 border border-red-400/50' 
+                    : 'bg-purple-500/30 border border-purple-400/50'
+                }`}>
+                  <span className="text-lg">⏱️</span>
+                  <span className={`font-mono font-bold text-lg ${
+                    isExpired ? 'text-red-300' : 'text-purple-200'
+                  }`}>
+                    {isExpired ? 'EXPIRED' : formattedTime}
                   </span>
                 </div>
+                {isExpired && (
+                  <p className="text-xs text-red-400 mt-2 font-semibold">
+                    Order will be marked as completed
+                  </p>
+                )}
+              </motion.div>
+            )}
+          </div>
+
+          {/* Order Details */}
+          <div className="space-y-4 mb-6">
+            <div className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="text-white/70">Customer Name:</span>
+              <span className="font-semibold text-white">{bill.customer_name || 'N/A'}</span>
+            </div>
+
+            <div className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="text-white/70">Roll Number:</span>
+              {isStudent ? (
+                <span className="font-bold text-lg bg-purple-500/30 px-3 py-1 rounded-lg text-purple-200 border border-purple-400/50">
+                  {registerNumber}
+                </span>
+              ) : (
+                <span className="text-white/50 italic">N/A</span>
               )}
             </div>
 
-            <div className="pt-3 border-t border-gray-200">
-              <h4 className="font-bold text-gray-700 mb-2">Items:</h4>
-              <ul className="space-y-2">
-                {bill?.items?.map((item, idx) => (
-                  <li key={idx} className="flex justify-between items-center">
-                    <span className="text-gray-700">
-                      {item.name} <span className="text-gray-500">x {item.qty}</span>
-                    </span>
-                    <span className="font-semibold">₹{item.price * item.qty}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="text-white/70">Order Date:</span>
+              <span className="font-semibold text-white">
+                {bill.created_at
+                  ? new Date(bill.created_at).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : 'N/A'}
+              </span>
             </div>
 
-            <div className="pt-3 border-t-2 border-gray-300">
-              <div className="flex justify-between items-center">
-                <span className="text-xl font-bold text-gray-700">Total Amount:</span>
-                <span className="text-3xl font-bold gradient-text">₹{bill?.total || 0}</span>
-              </div>
+            <div className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="text-white/70">Status:</span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-600 text-white uppercase">
+                {bill.status || 'placed'}
+              </span>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+          </div>
+
+          {/* Items Section */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-bold text-white">Order Items</h3>
+              {bill.items && bill.items.length > 3 && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-sm text-purple-300 hover:text-purple-200 font-semibold"
+                >
+                  {isExpanded ? 'Show Less' : `View All (${bill.items.length})`}
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {bill.items && bill.items.length > 0 ? (
+                <>
+                  {(isExpanded ? bill.items : bill.items.slice(0, 3)).map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center p-2 rounded-lg bg-white/5"
+                    >
+                      <span className="text-white">
+                        {item.name} <span className="text-white/60">× {item.qty}</span>
+                      </span>
+                      <span className="font-semibold text-white">
+                        ₹{item.price * item.qty}
+                      </span>
+                    </div>
+                  ))}
+                  {!isExpanded && bill.items.length > 3 && (
+                    <p className="text-center text-white/60 text-sm py-2">
+                      + {bill.items.length - 3} more items
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-white/60">No items</p>
+              )}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="pt-4 border-t-2 border-white/20 mb-6">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold text-white">Total Amount:</span>
+              <span className="text-3xl font-black gradient-text">₹{bill.total || 0}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 font-bold text-white transition"
+            >
+              Close
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

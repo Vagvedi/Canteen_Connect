@@ -18,7 +18,7 @@ export const useAuthStore = create((set) => ({
 
     const { data: profile, error } = await supabase
       .from("users")
-      .select("id, name, email, role")
+      .select("id, name, email, role, register_number")
       .eq("id", user.id)
       .single();
 
