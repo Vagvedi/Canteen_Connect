@@ -21,4 +21,33 @@ export const useCartStore = create((set, get) => ({
 
     set({ items, total });
   },
+
+  removeItem: (itemId) => {
+    const items = get().items.filter((i) => i.id !== itemId);
+    const total = items.reduce(
+      (sum, i) => sum + i.price * i.qty,
+      0
+    );
+    set({ items, total });
+  },
+
+  updateQuantity: (itemId, qty) => {
+    if (qty <= 0) {
+      get().removeItem(itemId);
+      return;
+    }
+
+    const items = get().items.map((i) =>
+      i.id === itemId ? { ...i, qty } : i
+    );
+    const total = items.reduce(
+      (sum, i) => sum + i.price * i.qty,
+      0
+    );
+    set({ items, total });
+  },
+
+  clear: () => {
+    set({ items: [], total: 0 });
+  },
 }));

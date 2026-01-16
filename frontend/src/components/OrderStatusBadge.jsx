@@ -1,14 +1,15 @@
 const statusColors = {
-  placed: 'bg-gray-200 text-gray-700',
-  preparing: 'bg-yellow-100 text-yellow-800',
-  ready: 'bg-green-100 text-green-800',
-  completed: 'bg-blue-100 text-blue-800',
+  placed: 'bg-gray-500/30 text-gray-200 border-gray-400/50',
+  preparing: 'bg-yellow-500/30 text-yellow-200 border-yellow-400/50',
+  ready: 'bg-green-500/30 text-green-200 border-green-400/50',
+  completed: 'bg-blue-500/30 text-blue-200 border-blue-400/50',
+  cancelled: 'bg-red-500/30 text-red-200 border-red-400/50',
 };
 
 const OrderStatusBadge = ({ status }) => {
   return (
-    <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[status] || ''}`}>
-      {status}
+    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColors[status] || 'bg-white/10 text-white border-white/20'}`}>
+      {status?.toUpperCase() || 'UNKNOWN'}
     </span>
   );
 };

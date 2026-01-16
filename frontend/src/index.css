@@ -33,6 +33,17 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* =========================
+   GRADIENT TEXT UTILITY
+   ========================= */
+
+.gradient-text {
+  background: linear-gradient(135deg, #9b5cff 0%, #d946ef 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* =====================================================
    🔒 LEGACY AUTH LAYOUT (DO NOT TOUCH)
    Used by Login.jsx & Register.jsx
