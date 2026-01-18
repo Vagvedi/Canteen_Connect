@@ -1,102 +1,139 @@
-# Canteen Connect
+# CanteenConnect
 
-Full-stack demo for a college canteen: students browse menu, add to cart, place orders, and track status; staff manage orders and menu.
+A full-stack college canteen management system where students can browse menus, place orders, track status, and staff can manage orders and menu items in real-time.
 
 ## Stack
-- Frontend: React (Vite), React Router, Tailwind, Zustand, Socket.io client
-- Backend: Node.js, Express, Socket.io, JWT auth, in-memory seed data
+- **Frontend**: React 18 (Vite), React Router, Tailwind CSS, Zustand, Framer Motion, Lucide Icons
+- **Backend**: Supabase (PostgreSQL + Auth + Real-time)
+- **UI/UX**: Modern glass-morphism design with smooth animations
 
-## Setup
-1) Install deps
-```bash
-cd backend && npm install
-cd ../frontend && npm install
-```
+## Features
+### For Students
+- Browse menu items by category
+- View detailed item information
+- Add items to cart with quantity control
+- Checkout with order confirmation
+- Track real-time order status (placed → preparing → ready)
+- View order history
 
-2) Environment
-- Backend: copy `backend/env.example` to `.env` (same dir) and set `JWT_SECRET`, `PORT` (optional).
-- Frontend: copy `frontend/env.example` to `.env` and set `VITE_API_BASE`, `VITE_SOCKET_URL` (point to backend).
-
-3) Run dev servers
-```bash
-cd backend && npm run dev   # http://localhost:4000
-cd frontend && npm run dev  # http://localhost:5173
-```
-
-## Backend endpoints (examples)
-- `POST /api/auth/register` → `{name,email,password,role}` → `201 { user, token }`
-- `POST /api/auth/login` → `{email,password}` → `200 { user, token }`
-- `GET /api/menu` → menu list
-- `GET /api/menu/:id` → menu item
-- `POST /api/cart/checkout` (student auth) → `{ items:[{menuId,qty}] }` → `201 {order}`
-- `GET /api/orders` (student) → user orders
-- `GET /api/orders/all` (staff) → all orders
-- `PATCH /api/orders/:id/status` (staff) → `{status}` → `200 {order}`
-
-### Sample cURL
-```bash
-# Register student
-curl -X POST http://localhost:4000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test","email":"test@uni.edu","password":"password","role":"student"}'
-
-# Login (store token)
-TOKEN=$(curl -s -X POST http://localhost:4000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"alice@uni.edu","password":"password"}' | jq -r .token)
-
-# Get menu
-curl http://localhost:4000/api/menu
-
-# Checkout cart (student token)
-curl -X POST http://localhost:4000/api/cart/checkout \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"items":[{"menuId":"m1","qty":1}]}'
-
-# Staff get all orders
-STAFF_TOKEN=$(curl -s -X POST http://localhost:4000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"staff@uni.edu","password":"password"}' | jq -r .token)
-curl -H "Authorization: Bearer $STAFF_TOKEN" http://localhost:4000/api/orders/all
-
-# Update order status
-curl -X PATCH http://localhost:4000/api/orders/o1/status \
-  -H "Authorization: Bearer $STAFF_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"preparing"}'
-```
-
-## Frontend pages
-- Home, Menu (category browsing), Item detail, Cart, Checkout, Orders (student), Staff dashboard, Login/Register
-- Components: NavBar, MenuCard, CartSidebar, OrderStatusBadge, StaffOrderCard
-
-## State & real-time
-- Zustand stores auth + cart
-- Axios client auto-attaches JWT
-- Socket.io client listens for `order:update` and `order:new`
-
-## Tests
-- Backend: Jest + Supertest smoke test (`npm test` in backend)
-- Frontend: Vitest + Testing Library (`npm test` in frontend)
-
-## Notes
-- Seed users: `alice@uni.edu` (student), `staff@uni.edu` (staff); password `password`
-- Replace secrets in `.env` before deploying; keep dev secret out of commits.
-
-## CanteenConnect
-A full-stack canteen management system.
+### For Staff
+- Real-time dashboard with all active orders
+- Filter orders by status
+- Update order status with one click
+- Bill preview and order details
+- Estimated preparation time tracker
 
 ## Setup & Run Locally
 
 ### Prerequisites
 - Node.js (v18+ recommended)
 - npm or yarn
+- Supabase account with project setup
 
-### Backend Setup
+### Frontend Setup
 ```bash
-cd backend
+cd frontend
 npm install
 cp env.example .env
+```
+
+Update `.env` with your Supabase credentials:
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### Run Development Server
+```bash
+cd frontend
 npm run dev
+# Frontend runs on http://localhost:5173
+```
+
+### Build for Production
+```bash
+npm run build
+npm run preview
+```
+
+## Project Structure
+
+```
+frontend/
+├── src/
+│   ├── api/              # Supabase API client
+│   ├── components/       # Reusable UI components
+│   │   ├── AuthLayout.jsx
+│   │   ├── Bill.jsx
+│   │   ├── CartSidebar.jsx
+│   │   ├── MenuCard.jsx
+│   │   ├── NavBar.jsx
+│   │   ├── OrderStatusBadge.jsx
+│   │   └── StaffOrderCard.jsx
+│   ├── hooks/            # Custom React hooks
+│   │   └── useOrderTimer.js
+│   ├── lib/              # Library setup
+│   │   └── supabase.js
+│   ├── pages/            # Route pages
+│   │   ├── Home.jsx
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   ├── Menu.jsx
+│   │   ├── ItemDetail.jsx
+│   │   ├── Cart.jsx
+│   │   ├── Checkout.jsx
+│   │   ├── Orders.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── AdminDashboard.jsx
+│   │   └── DashboardTabs.jsx
+│   ├── state/            # State management (Zustand)
+│   │   ├── store.js      # Auth store
+│   │   └── cartStore.js  # Cart store
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+└── env.example
+```
+
+## Pages Overview
+- **Home** - Landing page with login/register CTA
+- **Login/Register** - User authentication
+- **Menu** - Browse items by category
+- **ItemDetail** - View item details and nutrition
+- **Cart** - Review and modify items in cart
+- **Checkout** - Place order and confirm
+- **Orders** - Student order history and tracking
+- **Dashboard** - Student dashboard with quick access
+- **AdminDashboard** - Staff panel for order management
+
+## State Management
+- **Zustand** for auth and cart state
+- **Supabase Auth** for user authentication
+- **Real-time updates** via Supabase subscriptions
+
+## Testing
+```bash
+# Run tests
+npm test
+
+# Vitest + Testing Library for component tests
+```
+
+## Key Dependencies
+- `@supabase/supabase-js` - Backend & authentication
+- `react-router-dom` - Routing
+- `tailwindcss` - Styling
+- `zustand` - State management
+- `framer-motion` - Animations
+- `lucide-react` - Icons
+- `axios` - HTTP client
+
+## Deployment
+Frontend is built to deploy on GitHub Pages. Configure homepage in `package.json`:
+```bash
+npm run predeploy
+npm run deploy
 
