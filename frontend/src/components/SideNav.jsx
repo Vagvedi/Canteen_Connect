@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../state/store";
-import { LogOut, Utensils, Shield } from "lucide-react";
+import { LogOut, Utensils, Shield, Menu, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -13,6 +15,7 @@ export default function SideNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!user) return null;
 
@@ -75,7 +78,7 @@ export default function SideNav() {
         </div>
 
         {/* Center links */}
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           {links.map(link => (
             <button
               key={link.path}
@@ -112,8 +115,57 @@ export default function SideNav() {
           >
             <LogOut className="w-4 h-4" />
           </button>
+          
+          {/* Mobile menu toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center text-charcoal-60 hover:text-teal hover:bg-teal-light transition-all duration-200 shadow-neu-xs"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="md:hidden overflow-hidden bg-cream border-t border-cream-dark"
+          >
+            <div className="px-6 py-4 flex flex-col gap-2">
+              {links.map(link => (
+                <button
+                  key={link.path}
+                  onClick={() => {
+                    navigate(link.path);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`text-left text-sm font-semibold px-4 py-3 rounded-xl transition-all duration-200 ${
+                    location.pathname === link.path
+                      ? "bg-teal text-white shadow-neu-xs"
+                      : "text-charcoal-60 hover:bg-surface hover:shadow-neu-xs"
+                  }`}
+                >
+                  {link.label}
+                </button>
+              ))}
+              <div className="h-px bg-cream-dark my-2" />
+              <div className="flex items-center gap-3 px-4 py-2">
+                <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center shadow-neu-xs">
+                  <span className="text-xs font-bold text-teal-dark">{initials}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-charcoal">{user.name}</p>
+                  <p className="text-xs text-charcoal-60 capitalize">{user.role}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

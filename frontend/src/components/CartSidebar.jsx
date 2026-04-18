@@ -31,7 +31,7 @@ export default function CartSidebar({ isOpen, onClose }) {
             className="fixed top-0 right-0 h-full w-full max-w-md bg-surface z-50 flex flex-col shadow-neu-deep"
           >
             {/* Header */}
-            <div className="px-6 py-5 flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center shadow-neu-xs">
                   <ShoppingBag className="w-5 h-5 text-teal" />
@@ -51,10 +51,10 @@ export default function CartSidebar({ isOpen, onClose }) {
               </button>
             </div>
 
-            <hr className="rule-neu mx-6" />
+            <hr className="rule-neu mx-4 sm:mx-6" />
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5">
               {items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center py-16">
                   <div className="card-neu-inset w-24 h-24 rounded-2xl flex items-center justify-center text-4xl mb-5">
@@ -118,7 +118,7 @@ export default function CartSidebar({ isOpen, onClose }) {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="px-6 py-5">
+              <div className="px-4 sm:px-6 py-5">
                 <div className="card-neu-inset p-4 rounded-xl flex items-baseline justify-between mb-4">
                   <span className="text-sm font-medium text-charcoal-60">Total</span>
                   <span className="font-display text-2xl font-bold text-charcoal tabular-nums">₹{total}</span>

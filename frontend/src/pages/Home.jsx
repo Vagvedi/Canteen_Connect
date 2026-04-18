@@ -8,7 +8,7 @@ export default function Home() {
       <NavBar />
 
       {/* ══════ HERO ══════ */}
-      <section className="pt-28 pb-16 px-6">
+      <section className="pt-28 pb-16 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="card-neu p-8 md:p-12 lg:p-16 relative overflow-hidden">
             {/* Background decoration */}
@@ -58,7 +58,7 @@ export default function Home() {
       </section>
 
       {/* ══════ HOW IT WORKS ══════ */}
-      <section className="py-16 px-6">
+      <section className="py-16 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="pill-neu text-xs mb-4 inline-flex">How it works</span>
@@ -108,7 +108,7 @@ export default function Home() {
       </section>
 
       {/* ══════ FEATURES ══════ */}
-      <section className="py-16 px-6">
+      <section className="py-16 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="pill-neu text-xs mb-4 inline-flex">Features</span>
@@ -165,7 +165,7 @@ export default function Home() {
       </section>
 
       {/* ══════ CTA BANNER ══════ */}
-      <section className="py-12 px-6">
+      <section className="py-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="card-neu p-10 text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-teal/5 via-transparent to-amber/5" />
@@ -185,7 +185,7 @@ export default function Home() {
       </section>
 
       {/* ══════ FOOTER ══════ */}
-      <footer className="py-8 px-6">
+      <footer className="py-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-teal flex items-center justify-center shadow-neu-xs">
