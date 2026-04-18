@@ -29,7 +29,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-cream flex flex-col">
       <SideNav />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-display text-display-lg text-charcoal mb-2">Menu</h1>
