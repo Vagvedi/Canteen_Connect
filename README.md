@@ -2,10 +2,6 @@
 
 # 🍽️ CanteenConnect
 
-[![GitHub license](https://img.shields.io/github/license/username/canteen-connect?style=for-the-badge&color=blue)](https://github.com/username/canteen-connect/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/username/canteen-connect?style=for-the-badge&color=yellow)](https://github.com/username/canteen-connect/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/username/canteen-connect?style=for-the-badge&color=green)](https://github.com/username/canteen-connect/network)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](https://github.com/username/canteen-connect/pulls)
 
 *A modern, full-stack college canteen management system built with React and Supabase. Streamline your campus dining experience with real-time order tracking, intuitive menu browsing, and efficient staff management.*
 
