@@ -1,4 +1,4 @@
-<div align="center">
+
 
 # 🍽️ CanteenConnect
 
@@ -274,7 +274,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-<div align="center">
+
 
 **⭐ Star this repository if it helped you!**
 
@@ -282,4 +282,3 @@ Made with ❤️ by [Your Name](https://github.com/username)
 
 [![Back to top](https://img.shields.io/badge/Back%20to%20top-%23000000.svg?style=for-the-badge&logo=github&logoColor=white)](#-canteenconnect)
 
-</div>
